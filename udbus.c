@@ -319,6 +319,7 @@ static int sig_elem_of_char(char c, dbus_type *sig)
 	case 'g': *sig = DBUS_SIGNATURE; return 0;
 	case 'o': *sig = DBUS_OBJECTPATH; return 0;
 	case 'b': *sig = DBUS_BOOLEAN; return 0;
+	case 'y': *sig = DBUS_BYTE; return 0;
 	case 's': *sig = DBUS_STRING; return 0;
 	case 'n': *sig = DBUS_INT16; return 0;
 	case 'q': *sig = DBUS_UINT16; return 0;
