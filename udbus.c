@@ -313,6 +313,31 @@ static int put_string(struct dbus_writer *writer, const char *s, uint32_t len)
 	return r;
 }
 
+static int alignment_of_type(dbus_type type)
+{
+	switch (type) {
+	case DBUS_SIGNATURE: return 1;
+	case DBUS_OBJECTPATH: return 4;
+	case DBUS_BOOLEAN: return 4;
+	case DBUS_BYTE: return 1;
+	case DBUS_STRING: return 4;
+	case DBUS_INT16: return 2;
+	case DBUS_UINT16: return 2;
+	case DBUS_INT32: return 4;
+	case DBUS_UINT32: return 4;
+	case DBUS_INT64: return 8;
+	case DBUS_UINT64: return 8;
+	case DBUS_DOUBLE: return 8;
+	case DBUS_ARRAY: return 4;
+	case DBUS_VARIANT: return 1;
+	case DBUS_STRUCT_BEGIN: return 8;
+	case DBUS_STRUCT_END: return 0;
+	case DBUS_DICT_BEGIN: return 8;
+	case DBUS_DICT_END: return 0;
+	default: return -1;
+	}
+}
+
 static int sig_elem_of_char(char c, dbus_type *sig)
 {
 	switch (c) {
@@ -600,10 +625,12 @@ int dbus_msg_body_add_string(dbus_msg *msg, const char *val) { return put_string
 int dbus_msg_body_add_object_path(dbus_msg *msg, const char *val) { return dbus_msg_body_add_string(msg, val); }
 int dbus_msg_body_add_structure(dbus_msg *msg) { return align_write(&msg->writer, 8); }
 int dbus_msg_body_add_variant(dbus_msg *msg, dbus_sig *signature) { return put_variant(&msg->writer, signature); }
-int dbus_msg_body_add_array_begin(dbus_msg *msg, dbus_array_writer *aw)
+int dbus_msg_body_add_array_begin(dbus_msg *msg, dbus_type element, dbus_array_writer *aw)
 {
 	int r = 0;
 	r |= put_var_w32(&msg->writer, &aw->ptr);
+	if (r) return r;
+	r |= align_write(&msg->writer, alignment_of_type(element));
 	if (r) return r;
 	aw->offset = msg->writer.offset;
 	return r;

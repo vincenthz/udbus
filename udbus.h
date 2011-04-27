@@ -167,7 +167,7 @@ int dbus_msg_body_add_uint64     (dbus_msg *msg, uint64_t val);
 int dbus_msg_body_add_double     (dbus_msg *msg, double val);
 int dbus_msg_body_add_string     (dbus_msg *msg, const char *val);
 int dbus_msg_body_add_objectpath (dbus_msg *msg, const char *val);
-int dbus_msg_body_add_array_begin(dbus_msg *msg, dbus_array_writer *ptr);
+int dbus_msg_body_add_array_begin(dbus_msg *msg, dbus_type element, dbus_array_writer *ptr);
 int dbus_msg_body_add_array_end  (dbus_msg *msg, dbus_array_writer *ptr);
 int dbus_msg_body_add_structure  (dbus_msg *msg);
 int dbus_msg_body_add_variant    (dbus_msg *msg, dbus_sig *signature);
