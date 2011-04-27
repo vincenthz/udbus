@@ -115,7 +115,7 @@ static uint32_t swap32(uint32_t a) { return (a << 24) | ((a & 0xff00) << 8) | ((
 
 uint32_t ALIGN_VALUE(uint32_t x, uint32_t n) { return ((x-1+n) & (~(n-1))); }
 
-#define check_read(i) if (reader->offset + i > reader->length) { printf("checkread failure offset=%d n=%d len=%d\n", reader->offset, i, reader->length); return (-1);}
+#define check_read(i) if (reader->offset + i > reader->length) { printf("%s: checkread failure offset=%d n=%d len=%d\n", __FUNCTION__, reader->offset, i, reader->length); return (-1);}
 #define check_write(i) if (writer->offset + i > writer->length) return (-1)
 
 static int align_read(struct dbus_reader *reader, int alignment)
