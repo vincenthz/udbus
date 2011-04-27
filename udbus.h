@@ -35,7 +35,7 @@
 #include <stdbool.h>
 
 #define UDBUS_VERSION_MAJOR 0
-#define UDBUS_VERSION_MINOR 8
+#define UDBUS_VERSION_MINOR 9
 
 typedef enum {
 	DBUS_SIGNATURE,
