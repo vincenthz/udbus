@@ -82,6 +82,30 @@ void io_debug(void *priv, const char *s)
 	fprintf(stderr, "debug: %s\n", s);
 }
 
+void print_message(dbus_msg *msg, int with_header)
+{
+	dbus_type *ptr = msg->signature.a;
+	if (with_header) {
+		char *ty;
+		switch (msg->type) {
+		case DBUS_TYPE_INVALID      : ty = "invalid"; break;
+		case DBUS_TYPE_METHOD_CALL  : ty = "method-call"; break;
+		case DBUS_TYPE_METHOD_RETURN: ty = "method-return"; break;
+		case DBUS_TYPE_ERROR        : ty = "error"; break;
+		case DBUS_TYPE_SIGNAL       : ty = "signal"; break;
+		default                     : ty = "unknown"; break;
+		}
+		printf("type: %s\n", ty);
+		printf("serial: %u\n", msg->serial);
+		if (msg->destination) printf("destination: %s\n", msg->destination);
+		if (msg->path) printf("path: %s\n", msg->path);
+		if (msg->interface) printf("interface: %s\n", msg->interface);
+		if (msg->method) printf("method: %s\n", msg->method);
+		if (msg->error_name) printf("error_name: %s\n", msg->error_name);
+		if (msg->sender) printf("sender: %s\n", msg->sender);
+	}
+}
+
 int main(int argc, char **argv)
 {
 	int fd;
@@ -89,10 +113,12 @@ int main(int argc, char **argv)
 	char hexencoded_uid[32];
 	char authline[256];
 	dbus_array_reader aread;
+	dbus_array_writer awriter;
 	dbus_sig signature;
 	dbus_msg *msg, *recv;
 	dbus_io dio;
 	int serial = 1;
+	int err;
 
 	fd = dbus_connect_session();
 	if (fd == -1) {
@@ -155,11 +181,44 @@ int main(int argc, char **argv)
         dbus_msg_send(&dio, msg);
 
 	dbus_msg_recv(&dio, &recv);
-#if 0
-	printf("received dbus msg: %d\n", recv->type);
-	dbus_msg_recv(&dio, &recv);
-	printf("received dbus msg: %d\n", recv->type);
-#endif
+
+	msg = dbus_msg_new_method_call(serial++,
+	                               "org.freedesktop.Notifications", "/org/freedesktop/Notifications",
+	                               "org.freedesktop.Notifications", "Notify");
+	signature.a[0] = DBUS_STRING;
+	signature.a[1] = DBUS_UINT32;
+	signature.a[2] = DBUS_STRING;
+	signature.a[3] = DBUS_STRING;
+	signature.a[4] = DBUS_STRING;
+	signature.a[5] = DBUS_ARRAY;
+	signature.a[6] = DBUS_STRING;
+	signature.a[7] = DBUS_ARRAY;
+	signature.a[8] = DBUS_DICT_BEGIN;
+	signature.a[9] = DBUS_STRING;
+	signature.a[10] = DBUS_VARIANT;
+	signature.a[11] = DBUS_DICT_END;
+	signature.a[12] = DBUS_INT32;
+	signature.a[13] = DBUS_INVALID;
+	dbus_msg_set_signature(msg, &signature);
+	dbus_msg_body_add(msg, 4096);
+	dbus_msg_body_add_string(msg, "y");
+	dbus_msg_body_add_uint32(msg, 1);
+	dbus_msg_body_add_string(msg, "x");
+	dbus_msg_body_add_string(msg, "this is a string");
+	dbus_msg_body_add_string(msg, "this is a o----");
+	dbus_msg_body_add_array_begin(msg, signature.a[6], &awriter);
+	dbus_msg_body_add_array_end(msg, &awriter);
+	dbus_msg_body_add_array_begin(msg, signature.a[8], &awriter);
+	dbus_msg_body_add_array_end(msg, &awriter);
+	dbus_msg_body_add_int32(msg, 4000);
+	dbus_msg_send(&dio, msg);
+
+	err = dbus_msg_recv(&dio, &recv);
+	if (err) {
+		printf("error receiving message %d\n", err);
+		exit(2);
+	}
+	print_message(recv, 1);
 
 	return 0;
 }
