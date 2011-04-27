@@ -328,6 +328,7 @@ static int sig_elem_of_char(char c, dbus_type *sig)
 	case 't': *sig = DBUS_UINT64; return 0;
 	case 'd': *sig = DBUS_DOUBLE; return 0;
 	case 'a': *sig = DBUS_ARRAY; return 0;
+	case 'v': *sig = DBUS_VARIANT; return 0;
 	case '(': *sig = DBUS_STRUCT_BEGIN; return 0;
 	case ')': *sig = DBUS_STRUCT_END; return 0;
 	default: return -1;
@@ -349,6 +350,7 @@ static int char_of_sig_elem(dbus_type sig, char *c)
 	case DBUS_UINT64: *c = 't'; return 0;
 	case DBUS_DOUBLE: *c = 'd'; return 0;
 	case DBUS_ARRAY: *c = 'a'; return 0;
+	case DBUS_VARIANT: *c = 'v'; return 0;
 	case DBUS_STRUCT_BEGIN: *c = '('; return 0;
 	case DBUS_STRUCT_END: *c = ')'; return 0;
 	default: return -1;
