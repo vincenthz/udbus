@@ -454,7 +454,9 @@ static int read_headerfields(struct dbus_reader *reader, int length, dbus_msg *m
 
 	while (reader->offset < length) {
 		r |= get_w8(reader, &ty);
+		if (r) break;
 		r |= get_variant(reader, &signature);
+		if (r) break;
 		switch (ty) {
 		case DBUS_FIELD_PATH:
 			assertskip(ty, DBUS_OBJECTPATH);
@@ -486,7 +488,7 @@ static int read_headerfields(struct dbus_reader *reader, int length, dbus_msg *m
 			break;
 		case DBUS_FIELD_SIGNATURE:
 			assertskip(ty, DBUS_SIGNATURE);
-			get_signature(reader, &msg->signature);
+			r |= get_signature(reader, &msg->signature);
 			break;
 		case DBUS_FIELD_UNIX_FDS:
 			break;
@@ -494,7 +496,9 @@ static int read_headerfields(struct dbus_reader *reader, int length, dbus_msg *m
 			printf("unknown type: %d\n", ty);
 			return 3;
 		}
+		if (r) break;
 		r |= align_read(reader, 8);
+		if (r) break;
 	}
 	return r;
 }
@@ -600,6 +604,7 @@ int dbus_msg_body_add_array_begin(dbus_msg *msg, dbus_array_writer *aw)
 {
 	int r = 0;
 	r |= put_var_w32(&msg->writer, &aw->ptr);
+	if (r) return r;
 	aw->offset = msg->writer.offset;
 	return r;
 }
