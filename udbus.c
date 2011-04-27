@@ -331,6 +331,8 @@ static int sig_elem_of_char(char c, dbus_type *sig)
 	case 'v': *sig = DBUS_VARIANT; return 0;
 	case '(': *sig = DBUS_STRUCT_BEGIN; return 0;
 	case ')': *sig = DBUS_STRUCT_END; return 0;
+	case '{': *sig = DBUS_DICT_BEGIN; return 0;
+	case '}': *sig = DBUS_DICT_END; return 0;
 	default: return -1;
 	}
 }
@@ -341,6 +343,7 @@ static int char_of_sig_elem(dbus_type sig, char *c)
 	case DBUS_SIGNATURE: *c = 'g'; return 0;
 	case DBUS_OBJECTPATH: *c = 'o'; return 0;
 	case DBUS_BOOLEAN: *c = 'b'; return 0;
+	case DBUS_BYTE: *c = 'y'; return 0;
 	case DBUS_STRING: *c = 's'; return 0;
 	case DBUS_INT16: *c = 'n'; return 0;
 	case DBUS_UINT16: *c = 'q'; return 0;
@@ -353,6 +356,8 @@ static int char_of_sig_elem(dbus_type sig, char *c)
 	case DBUS_VARIANT: *c = 'v'; return 0;
 	case DBUS_STRUCT_BEGIN: *c = '('; return 0;
 	case DBUS_STRUCT_END: *c = ')'; return 0;
+	case DBUS_DICT_BEGIN: *c = '{'; return 0;
+	case DBUS_DICT_END: *c = '}'; return 0;
 	default: return -1;
 	}
 }

@@ -54,6 +54,8 @@ typedef enum {
 	DBUS_VARIANT,
 	DBUS_STRUCT_BEGIN,
 	DBUS_STRUCT_END,
+	DBUS_DICT_BEGIN,
+	DBUS_DICT_END,
 	DBUS_INVALID = -1,
 } dbus_type;
 
