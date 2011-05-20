@@ -184,7 +184,7 @@ int dbus_msg_body_get_uint64      (dbus_msg *msg, uint64_t *val);
 int dbus_msg_body_get_double      (dbus_msg *msg, double *val);
 int dbus_msg_body_get_string      (dbus_msg *msg, char **val);
 int dbus_msg_body_get_object_path (dbus_msg *msg, char **val);
-int dbus_msg_body_get_array       (dbus_msg *msg, dbus_array_reader *ptr);
+int dbus_msg_body_get_array       (dbus_msg *msg, dbus_type element, dbus_array_reader *ptr);
 int dbus_msg_body_get_array_left  (dbus_msg *msg, dbus_array_reader *ptr);
 int dbus_msg_body_get_structure   (dbus_msg *msg);
 int dbus_msg_body_get_variant     (dbus_msg *msg, dbus_sig *signature);

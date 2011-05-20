@@ -658,11 +658,14 @@ int dbus_msg_body_get_object_path(dbus_msg *msg, char **val) { return dbus_msg_b
 int dbus_msg_body_get_structure(dbus_msg *msg) { return align_read(&msg->reader, 8); }
 int dbus_msg_body_get_variant(dbus_msg *msg, dbus_sig *signature) { return get_variant(&msg->reader, signature); }
 
-int dbus_msg_body_get_array(dbus_msg *msg, dbus_array_reader *ar)
+int dbus_msg_body_get_array(dbus_msg *msg, dbus_type element, dbus_array_reader *ar)
 {
 	int r = 0;
 
 	r |= get_w32(&msg->reader, &ar->length);
+	if (r) return r;
+	r |= align_read(&msg->reader, alignment_of_type(element));
+	if (r) return r;
 	ar->offset = msg->reader.offset;
 	return r;
 }
