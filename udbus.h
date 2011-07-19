@@ -162,6 +162,8 @@ typedef struct {
 	void *priv;
 	/* private pointer passed for debugging */
 	void *logpriv;
+	/* next serial */
+	int next_serial;
 } dbus_io;
 
 void      dbus_msg_free(dbus_msg *msg);

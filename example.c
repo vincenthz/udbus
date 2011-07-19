@@ -109,7 +109,6 @@ int main(int argc, char **argv)
 	dbus_sig signature;
 	dbus_msg *msg, *recv;
 	dbus_io dio;
-	int serial = 1;
 	int err;
 
 	fd = dbus_connect_session();
@@ -123,6 +122,7 @@ int main(int argc, char **argv)
 	dio.priv = (void *) &fd;
 	dio.io_debug = io_debug;
 	dio.logpriv = NULL;
+	dio.next_serial = 1;
 
 	uid = getuid();
 	
@@ -131,7 +131,7 @@ int main(int argc, char **argv)
 
 	dbus_auth(&dio, authline);
 
-	msg = dbus_msg_new_method_call(serial++,
+	msg = dbus_msg_new_method_call(dio.next_serial++,
 	                               "org.freedesktop.DBus", "/org/freedesktop/DBus",
 	                               "org.freedesktop.DBus", "Hello");
 	if (!msg) {
@@ -143,7 +143,7 @@ int main(int argc, char **argv)
 	/* received a name acquired signal */
 	dbus_msg_recv(&dio, &recv);
 
-	msg = dbus_msg_new_method_call(serial++,
+	msg = dbus_msg_new_method_call(dio.next_serial++,
 	                               "org.freedesktop.DBus", "/org/freedesktop/DBus",
 	                               "org.freedesktop.DBus", "ListNames");
 	if (!msg) {
@@ -159,7 +159,7 @@ int main(int argc, char **argv)
 		printf("s: %s\n", val);
 	}
 
-	msg = dbus_msg_new_method_call(serial++,
+	msg = dbus_msg_new_method_call(dio.next_serial++,
 	                               "org.freedesktop.DBus", "/org/freedesktop/DBus",
 	                               "org.freedesktop.DBus", "AddMatch");
         if (!msg) {
@@ -174,7 +174,7 @@ int main(int argc, char **argv)
 
 	dbus_msg_recv(&dio, &recv);
 
-	msg = dbus_msg_new_method_call(serial++,
+	msg = dbus_msg_new_method_call(dio.next_serial++,
 	                               "org.freedesktop.Notifications", "/org/freedesktop/Notifications",
 	                               "org.freedesktop.Notifications", "Notify");
 	signature.a[0] = DBUS_STRING;
