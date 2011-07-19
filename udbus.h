@@ -78,6 +78,16 @@ struct dbus_writer {
 	int endianness; /* 0 = little endian, 1 = big endian */
 };
 
+struct dbus_header {
+	uint8_t endianness; /* 0 = little endian, 1 = big endian */
+	uint8_t messagetype;
+	uint8_t flags;
+	uint8_t ver;
+	uint32_t bodylen;
+	uint32_t serial;
+	uint32_t fieldslen;
+};
+
 typedef struct { uint32_t *ptr; uint32_t offset; } dbus_array_writer;
 typedef struct { uint32_t length; uint32_t offset; } dbus_array_reader;
 

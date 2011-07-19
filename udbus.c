@@ -35,16 +35,6 @@
 
 #define HAVE_UNIX_SOCKET 1
 
-struct header {
-	uint8_t endianness; /* 0 = little endian, 1 = big endian */
-	uint8_t messagetype;
-	uint8_t flags;
-	uint8_t ver;
-	uint32_t bodylen;
-	uint32_t serial;
-	uint32_t fieldslen;
-};
-
 static void reader_initialize(struct dbus_reader *reader, int align_offset, int length)
 {
 	reader->align_offset = align_offset;
@@ -78,14 +68,14 @@ static void hexdump(const uint8_t *s, int len)
 	printf("\n");
 }
 
-static void print_header(struct header *header)
+static void print_header(struct dbus_header *header)
 {
-	printf("header: %d\n", header->messagetype);
-	printf("header: %d\n", header->flags);
-	printf("header: %d\n", header->ver);
-	printf("header: %d\n", header->bodylen);
-	printf("header: %d\n", header->serial);
-	printf("header: %d\n", header->fieldslen);
+	printf("header type  : %d\n", header->messagetype);
+	printf("header flags : %d\n", header->flags);
+	printf("header ver   : %d\n", header->ver);
+	printf("header blen  : %d\n", header->bodylen);
+	printf("header serial: %d\n", header->serial);
+	printf("header flen  : %d\n", header->fieldslen);
 }
 
 static void print_msg(dbus_msg *msg)
@@ -446,12 +436,12 @@ static int put_variant(struct dbus_writer *writer, const dbus_sig *signature)
 
 /****************************************************************************/
 /* medium level */
-static int read_header(struct dbus_reader *reader, struct header *header)
+static int read_header(struct dbus_reader *reader, struct dbus_header *header)
 {
 	uint8_t endianness;
 	int r = 0;
 
-	memset(header, '\0', sizeof(struct header));
+	memset(header, '\0', sizeof(struct dbus_header));
 
 	r |= get_w8(reader, &endianness);
 	r |= get_w8(reader, &header->messagetype);
