@@ -160,7 +160,7 @@ int main(int argc, char **argv)
 	dbus_msg_send(&dio, msg);
 	dbus_msg_recv(&dio, &recv);
 
-	dbus_msg_body_get_array(recv, &aread);
+	dbus_msg_body_get_array(recv, DBUS_STRING, &aread);
 	while (dbus_msg_body_get_array_left(recv, &aread) > 0) {
 		char *val;
 		dbus_msg_body_get_string(recv, &val);
