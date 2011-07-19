@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2010-2011 Vincent Hanquez <vincent@snarc.org>
- * 
+ *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -14,7 +14,7 @@
  * 3. Neither the name of the author nor the names of his contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -143,7 +143,6 @@ static int align_write(struct dbus_writer *writer, int alignment)
 			writer->buffer[writer->offset++] = '\0';
 	}
 	return 0;
-	
 }
 
 static int get_w8(struct dbus_reader *reader, uint8_t *r)
@@ -161,7 +160,7 @@ static int get_w16(struct dbus_reader *reader, uint16_t *r)
 	if (reader->endianness) {
 		v = reader->data[reader->offset++] << 8;
 		v |= reader->data[reader->offset++];
-	} else { 
+	} else {
 		v = reader->data[reader->offset++];
 		v |= reader->data[reader->offset++] << 8;
 	}
@@ -242,7 +241,7 @@ static int put_w16(struct dbus_writer *writer, uint16_t v)
 	if (writer->endianness) {
 		writer->buffer[writer->offset++] = (v >> 8) & 0xff;
 		writer->buffer[writer->offset++] = (v) & 0xff;
-	} else { 
+	} else {
 		writer->buffer[writer->offset++] = (v) & 0xff;
 		writer->buffer[writer->offset++] = (v >> 8) & 0xff;
 	}
@@ -431,7 +430,7 @@ static int get_signature(struct dbus_reader *reader, dbus_sig *signature)
 		signature->a[i] = se;
 	}
 	r |= get_w8(reader, NULL);
-	signature->a[i] = -1; 
+	signature->a[i] = -1;
 	return r;
 }
 
@@ -465,7 +464,7 @@ static int read_header(struct dbus_reader *reader, struct header *header)
 	r |= get_w32(reader, &header->bodylen);
 	r |= get_w32(reader, &header->serial);
 	r |= get_w32(reader, &header->fieldslen);
-	
+
 	return r;
 }
 
@@ -899,7 +898,7 @@ int dbus_auth(dbus_io *dio, char *auth)
 	r = dio->io_write(dio->priv, buf, len);
 	if (r)
 		return r;
-	
+
 	r = read_line(dio, buf, 256);
 	if (r)
 		return r;
