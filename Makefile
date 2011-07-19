@@ -7,6 +7,9 @@ libudbus.a: udbus.o
 example: udbus.o example.o
 	$(CC) $(CFLAGS) -o $@ $+
 
+example2: udbus.o example2.o
+	$(CC) $(CFLAGS) -o $@ $+
+
 %.o: %.c %.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
