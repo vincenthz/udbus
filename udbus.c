@@ -789,20 +789,25 @@ static int dbus_event_recv_hdrfields(dbus_io *dio, dbus_eventpart *evpart)
 		struct dbus_reader reader;
 		memset(&reader, '\0', sizeof(struct dbus_reader));
 
+		reader_initialize(&reader, 16, toread);
+		reader.data = evpart->fielddata;
+
 		evpart->msg = dbus_msg_new(evpart->header.serial);
 		if (!evpart->msg) {
 			free(reader.data);
+			evpart->fielddata = NULL;
 			dio_debug(dio, "allocating message failed");
 			return -4;
 		}
 		evpart->msg->type = evpart->header.messagetype;
 
-		reader_initialize(&reader, 16, toread);
-		reader.data = evpart->fielddata;
-		r |= read_headerfields(&reader, evpart->header.fieldslen, evpart->msg);
+		r = read_headerfields(&reader, evpart->header.fieldslen, evpart->msg);
 
 		free(reader.data);
 		evpart->fielddata = NULL;
+
+		if (r)
+			return r;
 
 		evpart->msg->reader.data = calloc(evpart->header.bodylen, sizeof(char));
 		if (!evpart->msg->reader.data) {
