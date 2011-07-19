@@ -138,7 +138,8 @@ static int align_write(struct dbus_writer *writer, int alignment)
 static int get_w8(struct dbus_reader *reader, uint8_t *r)
 {
 	check_read(1);
-	if (r) *r = reader->data[reader->offset++];
+	if (r) *r = reader->data[reader->offset];
+	reader->offset++;
 	return 0;
 }
 
