@@ -50,8 +50,8 @@ static int read_line(dbus_io *dio, char *buf, int len)
 		if (offset == len)
 			return -9;
 		r = dio->io_read(dio->priv, buf + offset, 1);
-		if (r)
-			return r;
+		if (r < 1)
+			return -8;
 		if (buf[offset] == '\n')
 			found = 1;
 		offset++;
@@ -726,6 +726,144 @@ int dbus_msg_marshall(dbus_msg *msg, struct dbus_writer *writer)
 	return r;
 }
 
+int dbus_event_init(dbus_eventpart *evpart)
+{
+	memset(evpart, '\0', sizeof(dbus_eventpart));
+	evpart->state = 1;
+	return 0;
+}
+
+int dbus_event_has_message(dbus_eventpart *evpart)
+{
+	return evpart->state == 5;
+}
+
+static int dbus_event_recv_header(dbus_io *dio, dbus_eventpart *evpart)
+{
+	int r;
+
+	r = dio->io_read(dio->priv, evpart->headerdata + evpart->headeroff, 16 - evpart->headeroff);
+	if (r < 0) {
+		dio_debug(dio, "reading header failed");
+		return -1;
+	}
+	evpart->headeroff += r;
+	if (evpart->headeroff == 16) {
+		struct dbus_reader reader;
+		memset(&reader, '\0', sizeof(struct dbus_reader));
+
+		reader_initialize(&reader, 0, 16);
+		reader.data = evpart->headerdata;
+
+		evpart->state = 2;
+		return read_header(&reader, &evpart->header);
+	}
+	return 0;
+}
+
+static int dbus_event_recv_hdrfields(dbus_io *dio, dbus_eventpart *evpart)
+{
+	int toread;
+	int r;
+
+	/* read header fields */
+	toread = ALIGN_VALUE(evpart->header.fieldslen, 8);
+
+	if (evpart->state == 2) {
+		evpart->fielddata = calloc(toread, sizeof(char));
+		if (!evpart->fielddata) {
+			dio_debug(dio, "calloc failed");
+			return -3;
+		}
+		evpart->state = 3;
+	}
+	r = dio->io_read(dio->priv, evpart->fielddata + evpart->fieldoff, toread - evpart->fieldoff);
+	if (r < 0) {
+		dio_debug(dio, "reading fields failed");
+		return -1;
+	}
+	evpart->fieldoff += r;
+	r = 0;
+
+	if (evpart->fieldoff == toread) {
+		struct dbus_reader reader;
+		memset(&reader, '\0', sizeof(struct dbus_reader));
+
+		evpart->msg = dbus_msg_new(evpart->header.serial);
+		if (!evpart->msg) {
+			free(reader.data);
+			dio_debug(dio, "allocating message failed");
+			return -4;
+		}
+		evpart->msg->type = evpart->header.messagetype;
+
+		reader_initialize(&reader, 16, toread);
+		reader.data = evpart->fielddata;
+		r |= read_headerfields(&reader, evpart->header.fieldslen, evpart->msg);
+
+		free(reader.data);
+		evpart->fielddata = NULL;
+
+		evpart->msg->reader.data = calloc(evpart->header.bodylen, sizeof(char));
+		if (!evpart->msg->reader.data) {
+			dio_debug(dio, "cannot allocate reader buffer");
+			dbus_msg_free(evpart->msg);
+			return -5;
+		}
+
+		evpart->state = 4;
+	}
+
+	return 0;
+}
+
+int dbus_event_recv(dbus_io *dio, dbus_eventpart *evpart, dbus_msg **rmsg)
+{
+	int r = 0;
+
+	switch (evpart->state) {
+	case 1:
+		r |= dbus_event_recv_header(dio, evpart);
+		break;
+	case 2:
+	case 3:
+		r |= dbus_event_recv_hdrfields(dio, evpart);
+		break;
+	case 4:
+		/* read body */
+		r = dio->io_read(dio->priv, evpart->msg->reader.data + evpart->bodyoff, evpart->header.bodylen - evpart->bodyoff);
+		if (r < 0) {
+			dio_debug(dio, "reading body failed");
+			return -1;
+		}
+		evpart->bodyoff += r;
+		r = 0;
+
+		if (evpart->bodyoff == evpart->header.bodylen) {
+			evpart->state = 5;
+			reader_initialize(&evpart->msg->reader, 0, evpart->header.bodylen);
+			*rmsg = evpart->msg;
+		}
+
+		break;
+	default:
+		r = -1;
+		break;
+	}
+
+	return r;
+}
+
+int dbus_event_get_fd(dbus_io *dio)
+{
+	int fd;
+
+	if (!dio->io_get_fd)
+		return -1;
+	fd = dio->io_get_fd(dio->priv);
+	return fd;
+}
+
 int dbus_msg_send(dbus_io *dio, dbus_msg *msg)
 {
 	int r = 0;
@@ -746,63 +884,16 @@ int dbus_msg_send(dbus_io *dio, dbus_msg *msg)
 
 int dbus_msg_recv(dbus_io *dio, dbus_msg **rmsg)
 {
-	uint8_t headerdata[16];
-	struct header header;
-	struct dbus_reader reader;
-	dbus_msg *msg;
-	int r = 0, toread;
+	dbus_eventpart ev;
+	int r;
 
-	memset(&reader, '\0', sizeof(struct dbus_reader));
-
-	/* read header */
-	r |= dio->io_read(dio->priv, headerdata, 16);
-	if (r) {
-		dio_debug(dio, "reading header failed");
-		return -1;
-	}
-	reader_initialize(&reader, 0, 16);
-	reader.data = headerdata;
-	r |= read_header(&reader, &header);
-
-	/* read header fields */
-	toread = ALIGN_VALUE(header.fieldslen, 8);
-
-	reader.data = calloc(toread, sizeof(char));
-	if (!reader.data) {
-		dio_debug(dio, "calloc failed");
-		return -3;
-	}
-	r |= dio->io_read(dio->priv, reader.data, toread);
-	if (r) {
-		dio_debug(dio, "reading body failed");
-		return -1;
-	}
-
-	msg = dbus_msg_new(header.serial);
-	if (!msg) {
-		free(reader.data);
-		dio_debug(dio, "allocating message failed");
-		return -4;
-	}
-	msg->type = header.messagetype;
-
-	reader_initialize(&reader, 16, toread);
-	r |= read_headerfields(&reader, header.fieldslen, msg);
-	free(reader.data);
-
-	/* read body */
-	msg->reader.data = calloc(header.bodylen, sizeof(char));
-	if (!msg->reader.data) {
-		dio_debug(dio, "cannot allocate reader buffer");
-		dbus_msg_free(msg);
-		return -5;
-	}
-
-	r |= dio->io_read(dio->priv, msg->reader.data, header.bodylen);
-	reader_initialize(&msg->reader, 0, header.bodylen);
-	if (!r)
-		*rmsg = msg;
-	return r;
+	dbus_event_init(&ev);
+	do {
+		r = dbus_event_recv(dio, &ev, rmsg);
+		if (r)
+			return r;
+	} while (!dbus_event_has_message(&ev));
+	return 0;
 }
 
 #include <string.h>

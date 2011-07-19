@@ -131,16 +131,33 @@ typedef struct {
 	};
 } dbus_msg;
 
+typedef struct {
+	int state;
+	/* s1 */
+	uint8_t headerdata[16];
+	int headeroff;
+	/* s2 */
+	struct dbus_header header;
+	/* s3 */
+	uint8_t *fielddata; /* alloc'ed */
+	int fieldoff;
+	/* s4 */
+	dbus_msg *msg;
+	int bodyoff;
+} dbus_eventpart;
+
 /* vectorise IO operations so that user can decide about buffering
  * and how to read/write to whatever is providing the data (channel, handle, etc)
  */
 typedef struct {
 	/* return 0 if succeed to write count bytes, non-0 otherwise */
 	int (*io_write)(void *priv, const void *buf, uint32_t count);
-	/* return 0 if succeed to read count bytes, non-0 otherwise */
+	/* return number of bytes read negative on error */
 	int (*io_read)(void *priv, void *buf, uint32_t count);
 	/* debugging logging */
 	void (*io_debug)(void *logpriv, const char *buf);
+	/* retrieve fd for select operation */
+	int (*io_get_fd)(void *priv);
 	/* private pointer passed to write/read (eg. handle, channel, buffer, etc) */
 	void *priv;
 	/* private pointer passed for debugging */
@@ -201,6 +218,12 @@ int dbus_msg_body_get_variant     (dbus_msg *msg, dbus_sig *signature);
 
 int dbus_msg_send(dbus_io *dio, dbus_msg *msg);
 int dbus_msg_recv(dbus_io *dio, dbus_msg **msg);
+
+/* event based recv */
+int dbus_event_init(dbus_eventpart *evpart);
+int dbus_event_has_message(dbus_eventpart *evpart);
+int dbus_event_recv(dbus_io *dio, dbus_eventpart *evpart, dbus_msg **msg);
+int dbus_event_get_fd(dbus_io *dio);
 
 /* connection method */
 int dbus_connect_session(void);

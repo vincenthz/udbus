@@ -50,16 +50,8 @@ void hexencode(char *d, int v)
 int io_read(void *priv, void *buf, uint32_t count)
 {
 	int fd = *((int *) priv);
-	uint32_t offset = 0;
-	while (offset < count) {
-		int r = read(fd, buf + offset, count - offset);
-		if (r <= 0) {
-			fprintf(stderr, "fail reading: %d\n", r);
-			return -1;
-		}
-		offset += r;
-	}
-	return 0;
+	int r = read(fd, buf, count);
+	return r;
 }
 
 int io_write(void *priv, const void *buf, uint32_t count)
