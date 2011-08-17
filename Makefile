@@ -1,7 +1,7 @@
 CC     = gcc
 CFLAGS = -Wall
 
-libudbus.a: udbus.o
+libudbus.a: udbusloop.o udbus.o
 	$(AR) cr $@ $+
 
 example: udbus.o example.o
