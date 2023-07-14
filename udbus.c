@@ -943,11 +943,20 @@ int dbus_connect_session(void)
 	if (!session_address) {
 		return -1;
 	}
-	if (strncmp("unix:", session_address, 5) == 0) {
+	if (strncmp("unix:", session_address, strlen("unix:")) == 0) {
 		char abstract[128];
-		char *flags = session_address + 5;
+		char path[128];
+		/* using strlen for the len of string literals for better readability
+		 * as the compiler most likely will optimise out the strlen() function
+		 * call and replace it with the length of the string literal directly
+		 * at compile time */
+		char *flags = session_address + strlen("unix:");
+		bool is_abstract = false;
+		bool is_path = false;
 
-		memset(abstract, '\0', 128);
+		memset(abstract, '\0', sizeof(abstract));
+		memset(path, '\0', sizeof(path));
+
 		for (; *flags != '\0'; ) {
 			char *end, *flagval;
 
@@ -955,16 +964,27 @@ int dbus_connect_session(void)
 			if (!end)
 				end = flags + strlen(flags);
 
-			if (strncmp("abstract=", flags, 9) == 0) {
-				flagval = flags + 9;
+			if (strncmp("abstract=", flags, strlen("abstract=")) == 0) {
+				flagval = flags + strlen("abstract=");
 				strncpy(abstract, flagval, end - flagval);
+				is_abstract = true;
+			} else if (strncmp("path=", flags, strlen("path=")) == 0) {
+				flagval = flags + strlen("path=");
+				strncpy(path, flagval, end - flagval);
+				is_path = true;
 			}
 
 			if (*end != ',')
 				break;
 			flags = end + 1;
 		}
-		return connect_unix_socket(abstract, 1, strlen(abstract));
+		if (is_abstract) {
+			return connect_unix_socket(abstract, 1, strlen(abstract));
+		} else if (is_path) {
+			return connect_unix_socket(path, 0, strlen(path));
+		} else {
+			perror("Failed to get the dbus session bus address");
+		}
 	}
 	return -1;
 }
